@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Épreuve de chant</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/sound@latest"></script>
+</head>
+<body style="text-align:center;font-family:Arial">
+
+<h2>🎤 Chante le Dies Irae !</h2>
+<button onclick="init()">Démarrer le micro</button>
+
+<p id="resultat">En attente...</p>
+
+<script>
+  const URL = "https://teachablemachine.withgoogle.com/models/f5Yu1VRts/";
+  let model, recognizer;
+
+  async function init() {
+    const checkpointURL = URL + "model.json";
+    const metadataURL = URL + "metadata.json";
+
+    recognizer = await tmSound.create(
+      checkpointURL,
+      metadataURL
+    );
+    await recognizer.ensureModelLoaded();
+
+    recognizer.listen(result => {
+      const scores = result.scores;
+      const labels = recognizer.wordLabels();
+
+      let maxScore = 0;
+      let bestLabel = "";
+
+      for (let i = 0; i < scores.length; i++) {
+        if (scores[i] > maxScore) {
+          maxScore = scores[i];
+          bestLabel = labels[i];
+        }
+      }
+
+      if (maxScore > 0.85) {
+        document.getElementById("resultat").innerHTML =
+          "✅ Bravo ! Son reconnu : <b>" + bestLabel + "</b>";
+      } else {
+        document.getElementById("resultat").innerHTML =
+          "❌ Essaie encore...";
+      }
+    }, {
+      probabilityThreshold: 0.75
+    });
+  }
+</script>
+
+</body>
+</html>
