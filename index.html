@@ -3,55 +3,77 @@
 <head>
   <meta charset="UTF-8">
   <title>Épreuve de chant</title>
+
+  <!-- TensorFlow.js -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+
+  <!-- Teachable Machine Sound -->
   <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/sound@latest"></script>
 </head>
-<body style="text-align:center;font-family:Arial">
 
-<h2>🎤 Chante le Dies Irae !</h2>
-<button onclick="init()">Démarrer le micro</button>
+<body style="text-align:center;font-family:Arial;">
 
-<p id="resultat">En attente...</p>
+<h1>🎤 Chante le bon son</h1>
+
+<p>Clique sur le bouton puis chante</p>
+
+<button onclick="init()">🎙️ Démarrer le micro</button>
+
+<p id="debug" style="margin-top:15px;color:#555;">
+En attente...
+</p>
+
+<p id="resultat" style="font-size:20px;font-weight:bold;margin-top:20px;">
+</p>
 
 <script>
-  const URL = "https://teachablemachine.withgoogle.com/models/f5Yu1VRts/";
-  let model, recognizer;
+const URL = "https://teachablemachine.withgoogle.com/models/f5Yu1VRts/";
+let recognizer;
 
-  async function init() {
-    const checkpointURL = URL + "model.json";
+async function init() {
+  try {
+    document.getElementById("debug").innerHTML =
+      "⏳ Chargement du modèle...";
+
+    const modelURL = URL + "model.json";
     const metadataURL = URL + "metadata.json";
 
-    recognizer = await tmSound.create(
-      checkpointURL,
-      metadataURL
-    );
+    recognizer = await tmSound.create(modelURL, metadataURL);
     await recognizer.ensureModelLoaded();
 
-    recognizer.listen(result => {
-      const scores = result.scores;
-      const labels = recognizer.wordLabels();
+    document.getElementById("debug").innerHTML =
+      "🎧 Micro en écoute... Chante maintenant";
 
-      let maxScore = 0;
+    recognizer.listen(result => {
+      const labels = recognizer.wordLabels();
+      const scores = result.scores;
+
+      let bestScore = 0;
       let bestLabel = "";
 
       for (let i = 0; i < scores.length; i++) {
-        if (scores[i] > maxScore) {
-          maxScore = scores[i];
+        if (scores[i] > bestScore) {
+          bestScore = scores[i];
           bestLabel = labels[i];
         }
       }
 
-      if (maxScore > 0.85) {
+      if (bestScore > 0.85) {
         document.getElementById("resultat").innerHTML =
           "✅ Bravo ! Son reconnu : <b>" + bestLabel + "</b>";
       } else {
         document.getElementById("resultat").innerHTML =
-          "❌ Essaie encore...";
+          "❌ Continue à chanter...";
       }
-    }, {
-      probabilityThreshold: 0.75
-    });
+
+    }, { probabilityThreshold: 0.75 });
+
+  } catch (error) {
+    document.getElementById("debug").innerHTML =
+      "❌ Erreur : " + error.message;
+    console.error(error);
   }
+}
 </script>
 
 </body>
